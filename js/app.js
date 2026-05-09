@@ -162,6 +162,7 @@ function initNavigation() {
   document.getElementById('editBackBtn').addEventListener('click', () => showScreen('diary'));
   document.getElementById('analyticsMenuBtn').addEventListener('click', () => showScreen('analytics'));
   document.getElementById('analyticsBackBtn').addEventListener('click', () => showScreen('menu'));
+  document.getElementById('settingsMenuBtn').addEventListener('click', () => {showToast('Временно недоступно', 'error');});
 }
 
 // Запуск приложения
