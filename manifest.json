@@ -1,6 +1,6 @@
 {
-  "name": "Контроль состояния",
-  "short_name": "Журнал",
+  "name": "Чувствуй",
+  "short_name": "Чувствуй",
   "description": "Дневник настроения и активностей",
   "start_url": "index.html",
   "display": "standalone",
