@@ -3,245 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Контроль состояния</title>
+  <title>Чувствуй</title>
   
   <meta name="theme-color" content="#f5f5f5" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Журнал" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
+  <meta name="apple-mobile-web-app-title" content="Чувствуй" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; overflow: hidden; }
-    body { background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; justify-content: center; color: #1e1e1e; }
-    .mobile-app {
-      width: 100%; max-width: 430px; height: 100vh; height: 100dvh;
-      background: #f5f5f5; position: relative; overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; text-align: center; }
-    .toast.show { opacity: 1; }
-    .toast.success { background: #67c79c; color: white; }
-    .toast.error { background: #f16f73; color: white; }
-    
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 998; display: none; align-items: center; justify-content: center; }
-    .modal-overlay.show { display: flex; }
-    .modal-dialog { background: white; border-radius: 20px; padding: 24px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
-    .modal-dialog p { font-size: 16px; color: #1e1e1e; margin-bottom: 20px; line-height: 1.4; }
-    .modal-buttons { display: flex; gap: 12px; }
-    .modal-btn { flex: 1; height: 48px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
-    .modal-btn.cancel { background: #f0f0f0; color: #444; }
-    .modal-btn.cancel:hover { background: #e5e5e5; }
-    .modal-btn.confirm { background: #E00000; color: white; }
-    .modal-btn.confirm:hover { background: #c00000; }
-    .modal-btn:active { transform: scale(0.97); }
-
-    .screen { display: none; width: 100%; flex: 1; flex-direction: column; overflow: hidden; }
-    .screen.active { display: flex; animation: fadeIn 0.25s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    
-    #mainScreen { padding: 20px 24px 0; }
-    #mainScreen .calendar-card { flex-shrink: 0; }
-    #mainScreen .section { flex-shrink: 0; }
-    #mainScreen .journal-box { height: 100px; }
-    #mainScreen .save-btn { margin: 12px auto 0; flex-shrink: 0; }
-
-    #menuScreen { padding: 20px 24px 0; }
-
-    #diaryScreen { padding: 20px 24px 0; }
-    #diaryScreen .screen-header { flex-shrink: 0; }
-    #diaryScreen .screen-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 20px; scrollbar-width: none; -ms-overflow-style: none; }
-    #diaryScreen .screen-content::-webkit-scrollbar { display: none; }
-
-    #editScreen { padding: 20px 24px 0; }
-    #editScreen .journal-box { height: 100px; }
-    #editScreen .save-btn { margin: 12px auto 0; flex-shrink: 0; }
-    #editScreen .delete-btn { margin: 8px auto 0; flex-shrink: 0; }
-
-    #analyticsScreen { padding: 20px 24px 0; }
-    #analyticsScreen .screen-header { flex-shrink: 0; }
-    #analyticsScreen .screen-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 20px; scrollbar-width: none; -ms-overflow-style: none; }
-    #analyticsScreen .screen-content::-webkit-scrollbar { display: none; }
-
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
-    .menu-btn { width: 34px; height: 34px; display: flex; flex-direction: column; justify-content: center; gap: 5px; cursor: pointer; border: none; background: none; padding: 0; }
-    .menu-btn span { display: block; width: 30px; height: 3px; border-radius: 30px; background: #1e1e1e; }
-    .menu-header, .diary-header, .edit-header, .analytics-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-shrink: 0; }
-    .back-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; background: none; transition: opacity 0.2s; }
-    .back-btn:hover { opacity: 0.7; }
-    .back-btn svg { width: 28px; height: 28px; stroke: #1e1e1e; }
-    .menu-title, .diary-title, .edit-title, .analytics-title { font-size: 22px; font-weight: 600; color: #1e1e1e; }
-    .edit-date-display { font-size: 13px; color: #8f8f8f; font-weight: 500; }
-    
-    .avatar-section { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding: 14px 16px; background: white; border-radius: 16px; border: 1px solid #d9d9d9; }
-    .avatar-large { width: 50px; height: 50px; border-radius: 50%; background: #EADDFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .avatar-large svg { width: 26px; height: 26px; fill: #4F378A; }
-    .profile-edit-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #d7d7d7; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; margin-left: auto; }
-    .profile-edit-btn:hover { background: #f0f0f0; border-color: #b8a0e8; }
-    .profile-edit-btn svg { width: 13px; height: 13px; stroke: #8f8f8f; }
-    .user-info { flex: 1; min-width: 0; }
-    .user-name { font-size: 17px; font-weight: 600; color: #1e1e1e; line-height: 1.3; }
-    .user-name-edit { flex: 1; }
-    .name-input { width: 100%; height: 36px; border: 1.5px solid #8f6bff; border-radius: 10px; padding: 0 10px; font-size: 15px; font-weight: 600; color: #1e1e1e; outline: none; background: white; font-family: inherit; }
-    .name-input::placeholder { color: #a4a4a4; }
-    .name-buttons { display: flex; gap: 6px; margin-top: 6px; }
-    .name-btn { flex: 1; height: 30px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
-    .cancel-btn { background: #f0f0f0; color: #444; }
-    .cancel-btn:hover { background: #e5e5e5; }
-    .save-name-btn { background: #EADDFF; color: #4F378A; }
-    .save-name-btn:hover { background: #e0d0ff; }
-    .name-btn:active { transform: scale(0.97); }
-    
-    .menu-list { background: white; border-radius: 16px; border: 1px solid #d9d9d9; overflow: hidden; margin-bottom: 20px; }
-    .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; }
-    .menu-item:last-child { border-bottom: none; }
-    .menu-item:hover { background: #f9f9f9; }
-    .menu-label { font-size: 15px; color: #1e1e1e; }
-    .menu-arrow { width: 18px; height: 18px; stroke: #8f8f8f; }
-    .import-export-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .import-btn, .export-btn { height: 50px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
-    .import-btn { background: #EADDFF; color: #4F378A; border: 1.5px solid rgba(79, 55, 138, 0.2); }
-    .import-btn:hover { background: #e0d0ff; transform: translateY(-1px); }
-    .import-btn:active { transform: scale(0.98); }
-    .export-btn { background: white; color: #4F378A; border: 1.5px solid rgba(79, 55, 138, 0.25); }
-    .export-btn:hover { background: #f9f7ff; transform: translateY(-1px); }
-    .export-btn:active { transform: scale(0.98); }
-    
-    .diary-list { display: flex; flex-direction: column; gap: 8px; }
-    .diary-entry { background: white; border: 1px solid #d9d9d9; border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; }
-    .diary-entry:hover { background: #f9f7ff; border-color: #b8a0e8; transform: translateY(-1px); }
-    .diary-entry-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-    .diary-mood-svg { width: 28px; height: 28px; flex-shrink: 0; }
-    .diary-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .diary-date-line { display: flex; align-items: center; gap: 6px; }
-    .diary-date { font-size: 13px; color: #1e1e1e; }
-    .diary-time { font-size: 11px; color: #8f8f8f; }
-    .diary-preview { font-size: 12px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
-    .diary-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 3px; }
-    .diary-tag { background: #f3efff; color: #5d4b7d; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 500; }
-    .diary-empty { text-align: center; color: #a4a4a4; font-size: 14px; padding: 40px 0; }
-    .diary-edit-btn { width: 28px; height: 28px; border-radius: 7px; border: 1px solid #d7d7d7; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-    .diary-edit-btn:hover { background: #f0f0f0; border-color: #b8a0e8; }
-    .diary-edit-btn svg { width: 14px; height: 14px; stroke: #8f8f8f; }
-
-    .date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; flex-shrink: 0; }
-    .calendar-icon { width: 22px; height: 22px; flex-shrink: 0; }
-    .today-label { font-size: 16px; font-weight: 500; margin-right: 2px; }
-    .date-pill { display: flex; align-items: center; justify-content: center; height: 30px; min-width: 36px; border-radius: 8px; border: 1px solid #d7d7d7; background: #ececec; padding: 0 12px; font-size: 15px; color: #444; font-weight: 500; }
-    .date-select { height: 30px; border-radius: 8px; border: 1px solid #d7d7d7; background: #f0f0f0; padding: 0 10px; font-size: 14px; color: #444; outline: none; cursor: pointer; font-family: inherit; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px; }
-    .calendar-card { background: white; border: 1px solid #d9d9d9; border-radius: 16px; padding: 14px 14px 10px; margin-bottom: 14px; flex-shrink: 0; }
-    .month-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 600; font-size: 16px; color: #1e1e1e; }
-    .month-nav { width: 26px; height: 26px; border-radius: 7px; border: none; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #1e1e1e; transition: background 0.2s; }
-    .month-nav:hover { background: #e0e0e0; }
-    .month-nav svg { width: 14px; height: 14px; stroke: #1e1e1e; stroke-width: 2; }
-    .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 6px; color: #8f8f8f; font-size: 12px; font-weight: 500; }
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 4px 0; }
-    .day { width: 32px; height: 32px; margin: 0 auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; position: relative; cursor: pointer; transition: background 0.2s, transform 0.1s; color: #1e1e1e; user-select: none; }
-    .day:hover { transform: scale(1.05); }
-    .day.selected { font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-    .day.today-highlight { box-shadow: inset 0 0 0 2px #5d4b7d; }
-    .day.mood-happy { background: #67c79c; color: white; }
-    .day.mood-good { background: #bdd36d; }
-    .day.mood-normal { background: #f1cd5e; }
-    .day.mood-sad { background: #f0a050; color: white; }
-    .day.mood-bad { background: #f16f73; color: white; }
-    .day.muted { color: #bdbdbd; cursor: default; }
-    .day.muted:hover { background: transparent; transform: none; }
-    .section { margin-bottom: 14px; flex-shrink: 0; }
-    .section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .section-title span { font-size: 15px; font-weight: 500; }
-    .section-title svg { width: 26px; height: 26px; }
-    .moods { display: flex; justify-content: space-between; padding: 0 4px; }
-    .mood-btn { width: 44px; height: 44px; border-radius: 50%; background: white; border: 2px solid transparent; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.08); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; outline: none; }
-    .mood-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.12); }
-    .mood-btn:active { transform: scale(0.95); }
-    .mood-btn.active { transform: scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
-    .mood-btn.active[data-mood="happy"] { border-color: #00A63E; background: #f0faf3; }
-    .mood-btn.active[data-mood="good"] { border-color: #8CAB00; background: #f8fae8; }
-    .mood-btn.active[data-mood="normal"] { border-color: #F0B400; background: #fff9e6; }
-    .mood-btn.active[data-mood="sad"] { border-color: #E46A00; background: #fff3e6; }
-    .mood-btn.active[data-mood="bad"] { border-color: #E00000; background: #ffe6e6; }
-    .mood-btn svg { width: 34px; height: 34px; }
-    .activities-container { background: white; border: 1px solid #d7d7d7; border-radius: 14px; overflow: hidden; cursor: pointer; transition: border-color 0.2s; }
-    .activities-container.open { border-color: #8f6bff; }
-    .selected-activities { display: flex; align-items: center; gap: 6px; padding: 10px 12px; min-height: 42px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
-    .selected-activities::-webkit-scrollbar { display: none; }
-    .placeholder-tag { color: #a4a4a4; font-size: 13px; white-space: nowrap; user-select: none; }
-    .activity-tag { display: inline-flex; align-items: center; gap: 5px; background: #EADDFF; color: #4F378A; padding: 4px 9px 4px 6px; border-radius: 14px; font-size: 12px; font-weight: 500; white-space: nowrap; flex-shrink: 0; user-select: none; }
-    .activity-tag .remove-tag { width: 15px; height: 15px; border-radius: 50%; background: rgba(79, 55, 138, 0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; line-height: 1; transition: background 0.2s; }
-    .activity-tag .remove-tag:hover { background: rgba(79, 55, 138, 0.3); }
-    .activities-dropdown { border-top: 1px solid #f0f0f0; padding: 6px; max-height: 150px; overflow-y: auto; background: white; }
-    .activity-option { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #1e1e1e; transition: background 0.15s; }
-    .activity-option:hover { background: #f8f6ff; }
-    .activity-option input[type="checkbox"] { display: none; }
-    .activity-option span { width: 17px; height: 17px; border: 2px solid #d7d7d7; border-radius: 5px; flex-shrink: 0; transition: all 0.2s; position: relative; }
-    .activity-option input:checked + span { background: #8f6bff; border-color: #8f6bff; }
-    .activity-option input:checked + span::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-    .journal-box { width: 100%; border-radius: 14px; border: 1px solid #d7d7d7; background: white; padding: 12px; resize: none; outline: none; font-size: 15px; color: #1e1e1e; font-family: inherit; }
-    .journal-box::placeholder { color: #a4a4a4; }
-    .save-btn { width: 45%; height: 46px; margin: 14px auto 0; display: block; border: none; border-radius: 14px; background: #EADDFF; color: #4F378A; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(79, 55, 138, 0.12); flex-shrink: 0; font-family: inherit; }
-    .save-btn:hover { background: #e0d0ff; transform: translateY(-1px); }
-    .save-btn:active { transform: scale(0.98); }
-    .delete-btn { width: 100%; height: 46px; margin: 8px auto 0; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 14px; background: #fff0f0; color: #E00000; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; font-family: inherit; }
-    .delete-btn:hover { background: #ffe6e6; transform: translateY(-1px); }
-    .delete-btn:active { transform: scale(0.98); }
-    .delete-btn svg { width: 17px; height: 17px; stroke: #E00000; }
-
-    /* АНАЛИТИКА */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-    .stat-card { background: white; border: 1px solid #d9d9d9; border-radius: 14px; padding: 12px; text-align: center; }
-    .stat-card.popular { background: #EADDFF; border-color: #d0c0f0; }
-    .stat-icon { margin-bottom: 5px; }
-    .stat-icon svg { width: 20px; height: 20px; }
-    .stat-value { font-size: 20px; font-weight: 700; color: #1e1e1e; margin-bottom: 1px; }
-    .stat-label { font-size: 10px; color: #8f8f8f; font-weight: 500; }
-    .analytics-card { background: white; border: 1px solid #d9d9d9; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
-    .analytics-card-title { font-size: 14px; font-weight: 600; color: #1e1e1e; margin-bottom: 10px; }
-    .chart-controls { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-    .chart-period-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid #d7d7d7; background: white; font-size: 12px; font-weight: 600; cursor: pointer; color: #8f8f8f; transition: all 0.2s; font-family: inherit; }
-    .chart-period-btn.active { background: #EADDFF; color: #4F378A; border-color: #c0b0e8; }
-    .chart-period-btn:hover { border-color: #b8a0e8; }
-    .chart-nav { display: flex; align-items: center; gap: 6px; margin-left: auto; }
-    .chart-nav-btn { border-radius: 7px !important; width: 24px !important; height: 24px !important; }
-    .chart-nav-btn svg { width: 11px !important; height: 11px !important; }
-    .chart-period-label { font-size: 12px; font-weight: 600; color: #1e1e1e; min-width: 80px; text-align: center; }
-    .dynamic-chart { position: relative; min-height: 160px; }
-    .mood-bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
-    .mood-bar-svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .mood-bar-svg svg { width: 18px; height: 18px; }
-    .mood-bar-track { flex: 1; height: 7px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
-    .mood-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-    .happy-fill { background: #67c79c; }
-    .good-fill { background: #bdd36d; }
-    .normal-fill { background: #f1cd5e; }
-    .sad-fill { background: #f0a050; }
-    .bad-fill { background: #f16f73; }
-    .mood-bar-count { font-size: 11px; color: #8f8f8f; width: 16px; text-align: right; flex-shrink: 0; font-weight: 600; }
-    .activities-stats { display: flex; flex-wrap: wrap; gap: 5px; }
-    .act-stat-item { display: flex; align-items: center; gap: 5px; background: #f8f6ff; padding: 5px 10px; border-radius: 8px; font-size: 12px; color: #4F378A; font-weight: 500; }
-    .act-stat-count { font-weight: 700; font-size: 13px; }
-    .act-empty { text-align: center; color: #a4a4a4; font-size: 12px; padding: 8px 0; }
-    .recent-list { display: flex; flex-direction: column; gap: 3px; }
-    .recent-item { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; }
-    .recent-item:last-child { border-bottom: none; }
-    .recent-mood-svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .recent-date { color: #8f8f8f; font-size: 12px; min-width: 75px; white-space: nowrap; }
-    .recent-time { color: #bbb; font-size: 11px; }
-    .recent-text { color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-    .recent-empty { text-align: center; color: #a4a4a4; font-size: 12px; padding: 8px 0; }
-  </style>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
   <div class="toast" id="toast"></div>
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-dialog">
-      <p>Вы уверены, что хотите удалить эту запись?</p>
-      <div class="modal-buttons"><button class="modal-btn cancel" id="modalCancel">Нет</button><button class="modal-btn confirm" id="modalConfirm">Да</button></div>
+      <p id="modalMessage">Вы уверены?</p>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" id="modalCancel">Нет</button>
+        <button class="modal-btn confirm" id="modalConfirm">Да</button>
+      </div>
     </div>
   </div>
 
@@ -249,33 +32,67 @@
 
     <!-- ГЛАВНЫЙ ЭКРАН -->
     <div class="screen active" id="mainScreen">
-      <div class="top-bar"><button class="menu-btn" id="menuBtn"><span></span><span></span><span></span></button></div>
+      <div class="top-bar">
+        <button class="menu-btn" id="menuBtn"><span></span><span></span><span></span></button>
+      </div>
       <div class="date-row">
-        <svg class="calendar-icon" fill="none" stroke="#1e1e1e" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>
+        <svg class="calendar-icon" fill="none" stroke="#1e1e1e" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+          <path d="M16 3v4M8 3v4M3 10h18"></path>
+        </svg>
         <div class="today-label">Дата</div>
         <div class="date-pill" id="currentDayDisplay"></div>
-        <select class="date-select" id="monthSelect"><option value="0">Янв</option><option value="1">Фев</option><option value="2">Мар</option><option value="3">Апр</option><option value="4">Май</option><option value="5">Июн</option><option value="6">Июл</option><option value="7">Авг</option><option value="8">Сен</option><option value="9">Окт</option><option value="10">Ноя</option><option value="11">Дек</option></select>
+        <select class="date-select" id="monthSelect">
+          <option value="0">Янв</option><option value="1">Фев</option><option value="2">Мар</option>
+          <option value="3">Апр</option><option value="4">Май</option><option value="5">Июн</option>
+          <option value="6">Июл</option><option value="7">Авг</option><option value="8">Сен</option>
+          <option value="9">Окт</option><option value="10">Ноя</option><option value="11">Дек</option>
+        </select>
         <select class="date-select" id="yearSelect"></select>
       </div>
       <div class="calendar-card">
         <div class="month-header">
-          <button class="month-nav" id="prevMonthBtn"><svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="month-nav" id="prevMonthBtn">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <span id="calendarMonthTitle"></span>
-          <button class="month-nav" id="nextMonthBtn"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="month-nav" id="nextMonthBtn">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
-        <div class="weekdays"><div>Вс</div><div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div></div>
+        <div class="weekdays">
+          <div>Вс</div><div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div>
+        </div>
         <div class="days-grid" id="calendarDaysGrid"></div>
       </div>
-      <div class="section"><div class="section-title"><svg width="26" height="26" fill="none" stroke="#1e1e1e" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 15s1.5 2 4 2 4-2 4-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path></svg><span>Как у вас дела?</span></div>
+      <div class="section">
+        <div class="section-title">
+          <svg width="26" height="26" fill="none" stroke="#1e1e1e" stroke-width="2.5" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
+            <path d="M9 10h.01"></path><path d="M15 10h.01"></path>
+          </svg>
+          <span>Как у вас дела?</span>
+        </div>
         <div class="moods" id="moodContainer">
           <button class="mood-btn" data-mood="happy"><svg viewBox="0 0 24 24" fill="none" stroke="#00A63E" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></button>
           <button class="mood-btn" data-mood="good"><svg viewBox="0 0 24 24" fill="none" stroke="#8CAB00" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 15c1 .8 2.5 1.2 4 1.2s3-.4 4-1.2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></button>
           <button class="mood-btn" data-mood="normal"><svg viewBox="0 0 24 24" fill="none" stroke="#F0B400" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></button>
           <button class="mood-btn" data-mood="sad"><svg viewBox="0 0 24 24" fill="none" stroke="#E46A00" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></button>
           <button class="mood-btn" data-mood="bad"><svg viewBox="0 0 24 24" fill="none" stroke="#E00000" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></button>
-        </div></div>
-      <div class="section"><div class="section-title"><svg width="26" height="26" viewBox="0 0 34 34" fill="none" stroke="#1e1e1e" stroke-width="2.5"><path d="M16.6667 20H30L25 35L15 5L10 20H3.33333" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Активности</span></div>
-        <div class="activities-container" id="activitiesContainer"><div class="selected-activities" id="selectedActivities"><span class="placeholder-tag">Выберите активности...</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          <svg width="26" height="26" viewBox="0 0 34 34" fill="none" stroke="#1e1e1e" stroke-width="2.5">
+            <path d="M16.6667 20H30L25 35L15 5L10 20H3.33333" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Активности</span>
+        </div>
+        <div class="activities-container" id="activitiesContainer">
+          <div class="selected-activities" id="selectedActivities">
+            <span class="placeholder-tag">Выберите активности...</span>
+          </div>
           <div class="activities-dropdown" id="activitiesDropdown" style="display:none">
             <label class="activity-option"><input type="checkbox" value="Бег"><span></span>Бег</label>
             <label class="activity-option"><input type="checkbox" value="Учёба"><span></span>Учёба</label>
@@ -287,25 +104,45 @@
             <label class="activity-option"><input type="checkbox" value="Уборка"><span></span>Уборка</label>
             <label class="activity-option"><input type="checkbox" value="Встреча с друзьями"><span></span>Встреча с друзьями</label>
             <label class="activity-option"><input type="checkbox" value="Кино"><span></span>Кино</label>
-          </div></div></div>
-      <div class="section"><div class="section-title"><svg width="18" height="26" viewBox="0 0 22 30" fill="none"><circle cx="11" cy="7" r="6" fill="#000"/><rect x="9" y="13" width="4" height="15" rx="2" fill="#000"/></svg><span>Расскажите о вашем дне</span></div>
-        <textarea class="journal-box" placeholder="Пишите о чем угодно..."></textarea></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          <svg width="18" height="26" viewBox="0 0 22 30" fill="none">
+            <circle cx="11" cy="7" r="6" fill="#000"/>
+            <rect x="9" y="13" width="4" height="15" rx="2" fill="#000"/>
+          </svg>
+          <span>Расскажите о вашем дне</span>
+        </div>
+        <textarea class="journal-box" placeholder="Пишите о чем угодно..."></textarea>
+      </div>
       <button class="save-btn" id="mainSaveBtn">Сохранить</button>
     </div>
 
     <!-- МЕНЮ -->
     <div class="screen" id="menuScreen">
-      <div class="menu-header"><button class="back-btn" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div class="menu-title">Меню</div></div>
+      <div class="menu-header">
+        <button class="back-btn" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="menu-title">Меню</div>
+      </div>
       <div class="avatar-section">
-        <div class="avatar-large"><svg viewBox="0 0 36 36" fill="currentColor"><path d="M18 4C10.28 4 4 10.28 4 18s6.28 14 14 14 14-6.28 14-14S25.72 4 18 4zM18 8c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4zm0 20c-3.33 0-6.26-1.69-8-4.25.04-2.64 5.33-4.08 8-4.08s7.96 1.44 8 4.08C24.26 26.31 21.33 28 18 28z"/></svg></div>
+        <div class="avatar-large">
+          <svg viewBox="0 0 36 36" fill="currentColor"><path d="M18 4C10.28 4 4 10.28 4 18s6.28 14 14 14 14-6.28 14-14S25.72 4 18 4zM18 8c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4zm0 20c-3.33 0-6.26-1.69-8-4.25.04-2.64 5.33-4.08 8-4.08s7.96 1.44 8 4.08C24.26 26.31 21.33 28 18 28z"/></svg>
+        </div>
         <div class="user-info">
           <div class="user-name" id="userNameDisplay">Ваше имя</div>
           <div class="user-name-edit" id="userNameEdit" style="display:none">
             <input type="text" class="name-input" id="nameInput" placeholder="Ваше имя" maxlength="30">
-            <div class="name-buttons"><button class="name-btn cancel-btn" id="cancelNameBtn">Отмена</button><button class="name-btn save-name-btn" id="saveNameBtn">Сохранить</button></div>
+            <div class="name-buttons">
+              <button class="name-btn cancel-btn" id="cancelNameBtn">Отмена</button>
+              <button class="name-btn save-name-btn" id="saveNameBtn">Сохранить</button>
+            </div>
           </div>
         </div>
-        <button class="profile-edit-btn" id="editProfileBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="profile-edit-btn" id="editProfileBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
       </div>
       <div class="menu-list">
         <div class="menu-item" id="diaryMenuBtn"><span class="menu-label">Дневник записей</span><svg class="menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
@@ -316,17 +153,30 @@
         <button class="import-btn" id="importBtn">Импорт</button>
         <button class="export-btn" id="exportBtn">Экспорт</button>
       </div>
+      <button class="delete-all-btn" id="deleteAllBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Удалить все данные
+      </button>
     </div>
 
     <!-- ДНЕВНИК -->
-    <div class="screen" id="diaryScreen">
-      <div class="screen-header diary-header"><button class="back-btn" id="diaryBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div class="diary-title">Дневник записей</div></div>
-      <div class="screen-content"><div class="diary-list" id="diaryList"><div class="diary-empty">Загрузка...</div></div></div>
+    <div class="screen scrollable" id="diaryScreen">
+      <div class="screen-header diary-header">
+        <button class="back-btn" id="diaryBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="diary-title">Дневник записей</div>
+      </div>
+      <div class="screen-content">
+        <div class="diary-list" id="diaryList"><div class="diary-empty">Загрузка...</div></div>
+      </div>
     </div>
 
     <!-- РЕДАКТИРОВАНИЕ -->
     <div class="screen" id="editScreen">
-      <div class="edit-header"><button class="back-btn" id="editBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div class="edit-title">Редактировать</div><div class="edit-date-display" id="editDateDisplay"></div></div>
+      <div class="edit-header">
+        <button class="back-btn" id="editBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="edit-title">Редактировать</div>
+        <div class="edit-date-display" id="editDateDisplay"></div>
+      </div>
       <div class="section"><div class="section-title"><svg width="26" height="26" fill="none" stroke="#1e1e1e" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 15s1.5 2 4 2 4-2 4-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path></svg><span>Как у вас дела?</span></div><div class="moods" id="editMoodContainer"></div></div>
       <div class="section"><div class="section-title"><svg width="26" height="26" viewBox="0 0 34 34" fill="none" stroke="#1e1e1e" stroke-width="2.5"><path d="M16.6667 20H30L25 35L15 5L10 20H3.33333" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Активности</span></div><div class="activities-container" id="editActivitiesContainer"><div class="selected-activities" id="editSelectedActivities"><span class="placeholder-tag">Выберите активности...</span></div><div class="activities-dropdown" id="editActivitiesDropdown" style="display:none"></div></div></div>
       <div class="section"><div class="section-title"><svg width="18" height="26" viewBox="0 0 22 30" fill="none"><circle cx="11" cy="7" r="6" fill="#000"/><rect x="9" y="13" width="4" height="15" rx="2" fill="#000"/></svg><span>Расскажите о вашем дне</span></div><textarea class="journal-box" id="editJournalBox" placeholder="Пишите о чем угодно..."></textarea></div>
@@ -335,7 +185,7 @@
     </div>
 
     <!-- АНАЛИТИКА -->
-    <div class="screen" id="analyticsScreen">
+    <div class="screen scrollable" id="analyticsScreen">
       <div class="screen-header analytics-header">
         <button class="back-btn" id="analyticsBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
         <div class="analytics-title">Аналитика</div>
@@ -344,37 +194,31 @@
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F378A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-value" id="statTotalDays">0</div><div class="stat-label">дней с записями</div></div>
           <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F378A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="stat-value" id="statTotalEntries">0</div><div class="stat-label">всего записей</div></div>
-          <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F378A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="stat-value" id="statStreak">0 🔥</div><div class="stat-label">текущий стрик</div></div>
+          <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F378A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="stat-value" id="statStreak">0 🔥</div><div class="stat-label">дней подряд</div></div>
           <div class="stat-card popular"><div class="stat-icon" id="popularMoodIcon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F378A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="stat-value" id="statTopMood">—</div><div class="stat-label">частое настроение</div></div>
         </div>
-        <div class="analytics-card">
+        <div class="analytics-card" id="moodDistributionCard">
           <div class="analytics-card-title">Распределение настроений</div>
-          <div class="mood-bars" id="moodBars">
-            <div class="mood-bar-row"><div class="mood-bar-svg"><svg viewBox="0 0 24 24" fill="none" stroke="#00A63E" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="mood-bar-track"><div class="mood-bar-fill happy-fill" id="barHappy" style="width:0%"></div></div><span class="mood-bar-count" id="countHappy">0</span></div>
-            <div class="mood-bar-row"><div class="mood-bar-svg"><svg viewBox="0 0 24 24" fill="none" stroke="#8CAB00" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15c1 .8 2.5 1.2 4 1.2s3-.4 4-1.2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="mood-bar-track"><div class="mood-bar-fill good-fill" id="barGood" style="width:0%"></div></div><span class="mood-bar-count" id="countGood">0</span></div>
-            <div class="mood-bar-row"><div class="mood-bar-svg"><svg viewBox="0 0 24 24" fill="none" stroke="#F0B400" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="mood-bar-track"><div class="mood-bar-fill normal-fill" id="barNormal" style="width:0%"></div></div><span class="mood-bar-count" id="countNormal">0</span></div>
-            <div class="mood-bar-row"><div class="mood-bar-svg"><svg viewBox="0 0 24 24" fill="none" stroke="#E46A00" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="mood-bar-track"><div class="mood-bar-fill sad-fill" id="barSad" style="width:0%"></div></div><span class="mood-bar-count" id="countSad">0</span></div>
-            <div class="mood-bar-row"><div class="mood-bar-svg"><svg viewBox="0 0 24 24" fill="none" stroke="#E00000" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg></div><div class="mood-bar-track"><div class="mood-bar-fill bad-fill" id="barBad" style="width:0%"></div></div><span class="mood-bar-count" id="countBad">0</span></div>
-          </div>
+          <div class="mood-bars" id="moodBars"></div>
         </div>
-        <div class="analytics-card">
+        <div class="analytics-card" id="moodDynamicsCard">
           <div class="analytics-card-title">Динамика настроения</div>
           <div class="chart-controls">
             <button class="chart-period-btn active" id="periodWeek">Неделя</button>
             <button class="chart-period-btn" id="periodMonth">Месяц</button>
             <div class="chart-nav">
               <button class="month-nav chart-nav-btn" id="chartPrevBtn"><svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-              <span class="chart-period-label" id="chartPeriodLabel">Май 2026</span>
+              <span class="chart-period-label" id="chartPeriodLabel">""</span>
               <button class="month-nav chart-nav-btn" id="chartNextBtn"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </div>
           </div>
           <div class="dynamic-chart" id="dynamicChart"><div class="act-empty">Нет данных</div></div>
         </div>
-        <div class="analytics-card">
+        <div class="analytics-card" id="topActivitiesCard">
           <div class="analytics-card-title">Топ активностей</div>
           <div class="activities-stats" id="activitiesStats"><div class="act-empty">Нет данных</div></div>
         </div>
-        <div class="analytics-card">
+        <div class="analytics-card" id="recentEntriesCard">
           <div class="analytics-card-title">Последние записи</div>
           <div class="recent-list" id="recentList"><div class="act-empty">Нет записей</div></div>
         </div>
@@ -383,154 +227,23 @@
 
   </div>
 
-  <script>
-    (function() {
-      const mainScreen = document.getElementById('mainScreen'), menuScreen = document.getElementById('menuScreen'), 
-            diaryScreen = document.getElementById('diaryScreen'), editScreen = document.getElementById('editScreen'),
-            analyticsScreen = document.getElementById('analyticsScreen');
-      const toast = document.getElementById('toast'), modalOverlay = document.getElementById('modalOverlay');
-      
-      const moodSVGs = {
-        happy: '<svg viewBox="0 0 24 24" fill="none" stroke="#00A63E" stroke-width="1.8" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        good: '<svg viewBox="0 0 24 24" fill="none" stroke="#8CAB00" stroke-width="1.8" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M8 15c1 .8 2.5 1.2 4 1.2s3-.4 4-1.2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        normal: '<svg viewBox="0 0 24 24" fill="none" stroke="#F0B400" stroke-width="1.8" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        sad: '<svg viewBox="0 0 24 24" fill="none" stroke="#E46A00" stroke-width="1.8" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        bad: '<svg viewBox="0 0 24 24" fill="none" stroke="#E00000" stroke-width="1.8" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>'
-      };
-      
-      const moodMiniSVGs = {
-        happy: '<svg viewBox="0 0 24 24" fill="none" stroke="#00A63E" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        good: '<svg viewBox="0 0 24 24" fill="none" stroke="#8CAB00" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15c1 .8 2.5 1.2 4 1.2s3-.4 4-1.2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        normal: '<svg viewBox="0 0 24 24" fill="none" stroke="#F0B400" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        sad: '<svg viewBox="0 0 24 24" fill="none" stroke="#E46A00" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>',
-        bad: '<svg viewBox="0 0 24 24" fill="none" stroke="#E00000" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>'
-      };
+  <!-- Подключаем скрипты в правильном порядке -->
+  <script src="js/db.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/diary.js"></script>
+  <script src="js/edit.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/import-export.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/app.js"></script>
 
-      const activityOptions = ['Бег','Учёба','Работа','Спорт','Чтение','Прогулка','Готовка','Уборка','Встреча с друзьями','Кино'];
-      const moodColors = { happy: 'mood-happy', good: 'mood-good', normal: 'mood-normal', sad: 'mood-sad', bad: 'mood-bad' };
-      const moodScores = { happy: 5, good: 4, normal: 3, sad: 2, bad: 1 };
-      const moodNames = { happy: 'Счастливое', good: 'Хорошее', normal: 'Нейтральное', sad: 'Грустное', bad: 'Плохое' };
-
-      let editingDateStr = null, modalResolve = null, db, currentCalendarEntries = {};
-      let chartPeriod = 'week', chartOffset = 0;
-      let userName = '';
-      const USER_NAME_KEY = 'journalUserName';
-
-      function loadUserName() { const s=localStorage.getItem(USER_NAME_KEY); if(s){userName=s;} updateUserNameDisplay(); }
-      function saveUserName(name) { userName=name; localStorage.setItem(USER_NAME_KEY,name); updateUserNameDisplay(); }
-      function updateUserNameDisplay() { const d=document.getElementById('userNameDisplay'); if(d)d.textContent=userName||'Ваше имя'; }
-      function showToast(msg,type='success'){toast.textContent=msg;toast.className='toast '+type+' show';setTimeout(()=>toast.className='toast',2000);}
-      function showModal(){return new Promise((resolve)=>{modalResolve=resolve;modalOverlay.classList.add('show');});}
-      modalOverlay.querySelector('#modalCancel').addEventListener('click',()=>{modalOverlay.classList.remove('show');if(modalResolve){modalResolve(false);modalResolve=null;}});
-      modalOverlay.querySelector('#modalConfirm').addEventListener('click',()=>{modalOverlay.classList.remove('show');if(modalResolve){modalResolve(true);modalResolve=null;}});
-
-      function showScreen(screenName,idOrDateStr=null){
-        mainScreen.classList.remove('active');menuScreen.classList.remove('active');diaryScreen.classList.remove('active');editScreen.classList.remove('active');analyticsScreen.classList.remove('active');
-        if(screenName==='main'){mainScreen.classList.add('active');if(idOrDateStr){const[y,m,d]=idOrDateStr.split('-').map(Number);currentYear=y;currentMonth=m-1;selectedDay=d;dayManuallySelected=true;updateDateSelectors();updateDayDisplay();renderCalendar();}else{loadCalendarMoods();}}
-        else if(screenName==='menu'){menuScreen.classList.add('active');}
-        else if(screenName==='diary'){diaryScreen.classList.add('active');loadDiaryEntries();}
-        else if(screenName==='edit'){editingDateStr=idOrDateStr;editScreen.classList.add('active');loadEditEntry(idOrDateStr);}
-        else if(screenName==='analytics'){analyticsScreen.classList.add('active');loadAnalytics();}
-      }
-
-      function formatDateDisplay(dateStr){const[y,m,d]=dateStr.split('-');const months=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];return`${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;}
-      function formatTime(isoString){const d=new Date(isoString);return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
-
-      document.getElementById('menuBtn').addEventListener('click',()=>showScreen('menu'));
-      document.getElementById('backBtn').addEventListener('click',()=>showScreen('main'));
-      document.getElementById('diaryMenuBtn').addEventListener('click',()=>showScreen('diary'));
-      document.getElementById('diaryBackBtn').addEventListener('click',()=>showScreen('menu'));
-      document.getElementById('editBackBtn').addEventListener('click',()=>showScreen('diary'));
-      document.getElementById('exportBtn').addEventListener('click',exportEntries);
-      document.getElementById('importBtn').addEventListener('click',importEntries);
-      document.getElementById('analyticsMenuBtn').addEventListener('click',()=>showScreen('analytics'));
-      document.getElementById('analyticsBackBtn').addEventListener('click',()=>showScreen('menu'));
-      document.getElementById('periodWeek').addEventListener('click',function(){chartPeriod='week';chartOffset=0;this.classList.add('active');document.getElementById('periodMonth').classList.remove('active');loadAnalytics();});
-      document.getElementById('periodMonth').addEventListener('click',function(){chartPeriod='month';chartOffset=0;this.classList.add('active');document.getElementById('periodWeek').classList.remove('active');loadAnalytics();});
-      document.getElementById('chartPrevBtn').addEventListener('click',function(){chartOffset--;loadAnalytics();});
-      document.getElementById('chartNextBtn').addEventListener('click',function(){chartOffset++;loadAnalytics();});
-      document.getElementById('editProfileBtn').addEventListener('click',function(){document.getElementById('userNameDisplay').style.display='none';document.getElementById('userNameEdit').style.display='block';document.getElementById('nameInput').value=userName;document.getElementById('nameInput').focus();});
-      document.getElementById('cancelNameBtn').addEventListener('click',function(){document.getElementById('userNameDisplay').style.display='block';document.getElementById('userNameEdit').style.display='none';});
-      document.getElementById('saveNameBtn').addEventListener('click',function(){const n=document.getElementById('nameInput').value.trim();if(!n){showToast('Введите имя','error');return;}saveUserName(n);document.getElementById('userNameDisplay').style.display='block';document.getElementById('userNameEdit').style.display='none';showToast('Имя сохранено');});
-      document.getElementById('nameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('saveNameBtn').click();});
-
-      // IndexedDB
-      function getDB(){return new Promise((resolve,reject)=>{if(db){try{db.transaction(['entries'],'readonly');resolve(db);return;}catch(e){db=null;}}const r=indexedDB.open('JournalApp9',2);r.onupgradeneeded=function(e){const d=e.target.result;if(!d.objectStoreNames.contains('entries'))d.createObjectStore('entries',{keyPath:'id'});if(!d.objectStoreNames.contains('metadata'))d.createObjectStore('metadata',{keyPath:'date'});};r.onsuccess=function(e){db=e.target.result;db.onclose=function(){db=null;};resolve(db);};r.onerror=function(e){reject(e.target.error);};});}
-      async function saveEntry(entry){const d=await getDB();return new Promise((resolve,reject)=>{const t=d.transaction(['entries','metadata'],'readwrite');t.objectStore('entries').put(entry);t.objectStore('metadata').put({date:entry.date,lastMood:entry.mood});t.oncomplete=()=>resolve();t.onerror=(e)=>reject(e.target.error);});}
-      async function getAllEntries(){const d=await getDB();return new Promise((resolve)=>{d.transaction(['entries'],'readonly').objectStore('entries').getAll().onsuccess=function(e){resolve(e.target.result);};});}
-      async function getEntryById(id){const d=await getDB();return new Promise((resolve)=>{d.transaction(['entries'],'readonly').objectStore('entries').get(id).onsuccess=function(e){resolve(e.target.result||null);};});}
-      async function deleteEntryById(id){const d=await getDB();return new Promise((resolve,reject)=>{const t=d.transaction(['entries','metadata'],'readwrite');t.objectStore('entries').delete(id);t.oncomplete=()=>resolve();t.onerror=(e)=>reject(e.target.error);});}
-      async function loadCalendarMoods(){const d=await getDB();currentCalendarEntries={};return new Promise((resolve)=>{const r=d.transaction(['metadata'],'readonly').objectStore('metadata').getAll();r.onsuccess=function(){r.result.forEach(item=>{currentCalendarEntries[item.date]=item.lastMood;});renderCalendar();resolve();};});}
-
-      function clearMainFields(){selectMood(null);document.querySelector('#mainScreen .journal-box').value='';selectedActivitiesList=[];updateSelectedActivitiesDisplay();checkboxes.forEach(cb=>cb.checked=false);}
-      function getSelectedMood(container){const b=container.querySelector('.mood-btn.active');return b?b.getAttribute('data-mood'):null;}
-
-      // Экспорт/Импорт
-      async function exportEntries(){const entries=await getAllEntries();if(entries.length===0){showToast('Нет записей для экспорта','error');return;}const data={app:'JournalApp',version:1,exportDate:new Date().toISOString(),userName:userName,entries:entries.map(e=>({date:e.date,mood:e.mood,text:e.text||'',activities:e.activities||[],createdAt:e.createdAt}))};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`journal-backup-${new Date().toISOString().replace(/:/g,'-').replace(/\..+/,'')}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast('Экспорт выполнен');}
-      function importEntries(){const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async function(e){const file=e.target.files[0];if(!file)return;try{const text=await file.text();const data=JSON.parse(text);if(!data.entries||!Array.isArray(data.entries)){showToast('Неверный формат файла','error');return;}if(data.userName&&data.userName.trim()){userName=data.userName.trim();localStorage.removeItem(USER_NAME_KEY);localStorage.setItem(USER_NAME_KEY,userName);updateUserNameDisplay();}let imported=0;for(const entry of data.entries){if(!entry.date||!entry.mood)continue;await saveEntry({id:Date.now().toString()+'_'+Math.random().toString(36).substr(2,9),date:entry.date,mood:entry.mood,text:entry.text||'',activities:entry.activities||[],createdAt:entry.createdAt||new Date().toISOString()});imported++;}showToast(`Привет, ${userName||'пользователь'}! Добавлено: ${imported} ${getRecordsWord(imported)}`);loadCalendarMoods();}catch(err){showToast('Ошибка чтения файла','error');}};input.click();}
-      function getRecordsWord(count){const d=count%10,dd=count%100;if(dd>=11&&dd<=19)return'записей';if(d===1)return'запись';if(d>=2&&d<=4)return'записи';return'записей';}
-
-      // Дневник
-      async function loadDiaryEntries(){const list=document.getElementById('diaryList');let entries=await getAllEntries();if(entries.length===0){list.innerHTML='<div class="diary-empty">Нет записей</div>';return;}entries.sort((a,b)=>{if(a.date!==b.date)return b.date.localeCompare(a.date);return new Date(b.createdAt)-new Date(a.createdAt);});list.innerHTML=entries.map(entry=>{const hasText=entry.text&&entry.text.trim().length>0;const preview=hasText?entry.text.substring(0,40)+(entry.text.length>40?'...':''):'';const moodSVG=entry.mood?moodSVGs[entry.mood]||'':'';const tags=entry.activities&&entry.activities.length>0?`<div class="diary-tags">${entry.activities.slice(0,3).map(a=>`<span class="diary-tag">${a}</span>`).join('')}${entry.activities.length>3?`<span class="diary-tag">+${entry.activities.length-3}</span>`:''}</div>`:'';const[y,m,d]=entry.date.split('-');const months=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];return`<div class="diary-entry" data-id="${entry.id}"><div class="diary-entry-left"><div class="diary-mood-svg">${moodSVG}</div><div class="diary-info"><div class="diary-date-line"><span class="diary-date">${d} ${months[parseInt(m)-1]} ${y}</span>${entry.createdAt?`<span class="diary-time">${formatTime(entry.createdAt)}</span>`:''}</div>${hasText?`<div class="diary-preview">${preview}</div>`:''}${tags}</div></div><button class="diary-edit-btn" data-id="${entry.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>`;}).join('');list.querySelectorAll('.diary-entry').forEach(e=>{e.addEventListener('click',function(ev){if(ev.target.closest('.diary-edit-btn'))return;showScreen('edit',this.getAttribute('data-id'));});});list.querySelectorAll('.diary-edit-btn').forEach(b=>{b.addEventListener('click',function(ev){ev.stopPropagation();showScreen('edit',this.getAttribute('data-id'));});});}
-
-      // Редактирование
-      async function loadEditEntry(idOrDateStr){let entry=await getEntryById(idOrDateStr);let dateStr=idOrDateStr;if(entry){dateStr=entry.date;}let headerText=formatDateDisplay(dateStr);if(entry&&entry.createdAt){headerText+=' · '+formatTime(entry.createdAt);}document.getElementById('editDateDisplay').textContent=headerText;document.getElementById('editMoodContainer').innerHTML=document.getElementById('moodContainer').innerHTML;document.getElementById('editActivitiesContainer').innerHTML=`<div class="selected-activities" id="editSelectedActivities"><span class="placeholder-tag">Выберите активности...</span></div><div class="activities-dropdown" id="editActivitiesDropdown" style="display:none">${activityOptions.map(a=>`<label class="activity-option"><input type="checkbox" value="${a}"><span></span>${a}</label>`).join('')}</div>`;const moodContainer=document.getElementById('editMoodContainer'),journalBox=document.getElementById('editJournalBox');const activitiesContainer=document.getElementById('editActivitiesContainer'),selAct=document.getElementById('editSelectedActivities');const actDropdown=document.getElementById('editActivitiesDropdown'),cbs=actDropdown.querySelectorAll('input[type="checkbox"]');moodContainer.querySelectorAll('.mood-btn').forEach(btn=>{btn.classList.toggle('active',entry&&btn.getAttribute('data-mood')===entry.mood);btn.onclick=function(){const wasActive=this.classList.contains('active');moodContainer.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));if(!wasActive)this.classList.add('active');};});journalBox.value=entry?entry.text||'':'';let activities=entry&&entry.activities?[...entry.activities]:[];function updateDisp(){if(activities.length===0){selAct.innerHTML='<span class="placeholder-tag">Выберите активности...</span>';}else{selAct.innerHTML=activities.map(a=>`<div class="activity-tag">${a}<div class="remove-tag" data-activity="${a}">✕</div></div>`).join('');selAct.querySelectorAll('.remove-tag').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();activities=activities.filter(x=>x!==b.getAttribute('data-activity'));updateDisp();cbs.forEach(cb=>{if(cb.value===b.getAttribute('data-activity'))cb.checked=false;});});});}}updateDisp();cbs.forEach(cb=>{cb.checked=activities.includes(cb.value);});activitiesContainer.onclick=function(e){if(e.target.closest('.remove-tag'))return;const isOpen=actDropdown.style.display==='block';actDropdown.style.display=isOpen?'none':'block';activitiesContainer.classList.toggle('open',!isOpen);};document.addEventListener('click',function closeED(e){if(!activitiesContainer.contains(e.target)){actDropdown.style.display='none';activitiesContainer.classList.remove('open');}});cbs.forEach(cb=>{cb.onchange=function(){if(this.checked){if(!activities.includes(this.value))activities.push(this.value);}else{activities=activities.filter(a=>a!==this.value);}updateDisp();};});selAct.addEventListener('wheel',function(e){if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();selAct.scrollLeft+=e.deltaY;}},{passive:false});document.getElementById('editSaveBtn').onclick=async function(){const mood=getSelectedMood(moodContainer);if(!mood){showToast('Выберите эмоцию','error');return;}await saveEntry({id:entry?entry.id:Date.now().toString(),date:dateStr,mood,text:journalBox.value,activities,createdAt:entry?entry.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});showScreen('diary');showToast('Изменения сохранены');};document.getElementById('editDeleteBtn').onclick=async function(){if(await showModal()){if(entry)await deleteEntryById(entry.id);showScreen('diary');showToast('Запись удалена');}};}
-
-      // Календарь
-      const realToday=new Date();const realTodayDate=realToday.getDate(),realTodayMonth=realToday.getMonth(),realTodayYear=realToday.getFullYear();
-      let selectedDay=realTodayDate,currentMonth=realTodayMonth,currentYear=realTodayYear,dayManuallySelected=false;
-      const monthSelect=document.getElementById('monthSelect'),yearSelect=document.getElementById('yearSelect'),currentDayDisplay=document.getElementById('currentDayDisplay'),calendarMonthTitle=document.getElementById('calendarMonthTitle'),daysGrid=document.getElementById('calendarDaysGrid');
-      const prevMonthBtn=document.getElementById('prevMonthBtn'),nextMonthBtn=document.getElementById('nextMonthBtn');
-      const journalBox=document.querySelector('#mainScreen .journal-box'),mainSaveBtn=document.getElementById('mainSaveBtn');
-      const monthNames=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
-      function getDateString(day,month,year){return`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;}
-      function getSelectedDateString(){return getDateString(selectedDay,currentMonth,currentYear);}
-      function isCurrentMonthAndYear(){return currentMonth===realTodayMonth&&currentYear===realTodayYear;}
-      function populateYearSelect(){yearSelect.innerHTML='';for(let y=realTodayYear-10;y<=realTodayYear+10;y++){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===currentYear)o.selected=true;yearSelect.appendChild(o);}}
-      function updateDateSelectors(){monthSelect.value=currentMonth;const yo=yearSelect.querySelector(`option[value="${currentYear}"]`);if(yo)yearSelect.value=currentYear;else{populateYearSelect();yearSelect.value=currentYear;}if(isCurrentMonthAndYear()&&dayManuallySelected){selectedDay=realTodayDate;dayManuallySelected=false;updateDayDisplay();}}
-      function updateDayDisplay(){currentDayDisplay.textContent=selectedDay;}
-
-      mainSaveBtn.addEventListener('click',async function(){const mood=getSelectedMood(moodContainer);if(!mood){showToast('Выберите эмоцию','error');return;}const dateStr=getSelectedDateString();await saveEntry({id:Date.now().toString(),date:dateStr,mood,text:journalBox.value,activities:[...selectedActivitiesList],createdAt:new Date().toISOString()});currentCalendarEntries[dateStr]=mood;renderCalendar();showToast('Запись сохранена');clearMainFields();});
-
-      function renderCalendar(){calendarMonthTitle.textContent=`${monthNames[currentMonth]} ${currentYear}`;const firstDay=new Date(currentYear,currentMonth,1).getDay(),daysInMonth=new Date(currentYear,currentMonth+1,0).getDate(),prevMonthDays=new Date(currentYear,currentMonth,0).getDate();if(selectedDay>daysInMonth){selectedDay=daysInMonth;updateDayDisplay();}let html='';for(let i=firstDay-1;i>=0;i--)html+=`<div class="day muted">${prevMonthDays-i}</div>`;for(let d=1;d<=daysInMonth;d++){let classes=['day'];if(d===selectedDay)classes.push('selected');if(d===realTodayDate&&isCurrentMonthAndYear())classes.push('today-highlight');const dateStr=getDateString(d,currentMonth,currentYear);const mood=currentCalendarEntries[dateStr];if(mood&&moodColors[mood]&&!classes.includes('selected'))classes.push(moodColors[mood]);html+=`<div class="${classes.join(' ')}" data-day="${d}">${d}</div>`;}const totalCells=firstDay+daysInMonth,remainingCells=totalCells%7===0?0:7-(totalCells%7);for(let d=1;d<=remainingCells;d++)html+=`<div class="day muted">${d}</div>`;daysGrid.innerHTML=html;daysGrid.querySelectorAll('.day:not(.muted)').forEach(dayEl=>{dayEl.addEventListener('click',function(){selectedDay=parseInt(this.getAttribute('data-day'),10);dayManuallySelected=true;updateDayDisplay();renderCalendar();});});}
-      function goToPrevMonth(){if(currentMonth===0){currentMonth=11;currentYear--;}else{currentMonth--;}updateDateSelectors();renderCalendar();}
-      function goToNextMonth(){if(currentMonth===11){currentMonth=0;currentYear++;}else{currentMonth++;}updateDateSelectors();renderCalendar();}
-      prevMonthBtn.addEventListener('click',goToPrevMonth);nextMonthBtn.addEventListener('click',goToNextMonth);
-      monthSelect.addEventListener('change',()=>{currentMonth=parseInt(monthSelect.value,10);updateDateSelectors();renderCalendar();});
-      yearSelect.addEventListener('change',()=>{currentYear=parseInt(yearSelect.value,10);updateDateSelectors();renderCalendar();});
-
-      const moodContainer=document.getElementById('moodContainer');let selectedMood=null;
-      function selectMood(moodType){selectedMood=moodType;updateMoodButtons();}
-      function updateMoodButtons(){moodContainer.querySelectorAll('.mood-btn').forEach(btn=>btn.classList.toggle('active',btn.getAttribute('data-mood')===selectedMood));}
-      moodContainer.querySelectorAll('.mood-btn').forEach(btn=>{btn.addEventListener('click',function(){selectMood(selectedMood===this.getAttribute('data-mood')?null:this.getAttribute('data-mood'));});});
-
-      const activitiesContainer=document.getElementById('activitiesContainer'),selectedActivities=document.getElementById('selectedActivities'),activitiesDropdown=document.getElementById('activitiesDropdown'),checkboxes=activitiesDropdown.querySelectorAll('input[type="checkbox"]');
-      let selectedActivitiesList=[];
-      selectedActivities.addEventListener('wheel',function(e){if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();selectedActivities.scrollLeft+=e.deltaY;}},{passive:false});
-      function updateSelectedActivitiesDisplay(){if(selectedActivitiesList.length===0){selectedActivities.innerHTML='<span class="placeholder-tag">Выберите активности...</span>';}else{selectedActivities.innerHTML=selectedActivitiesList.map(a=>`<div class="activity-tag">${a}<div class="remove-tag" data-activity="${a}">✕</div></div>`).join('');selectedActivities.querySelectorAll('.remove-tag').forEach(btn=>{btn.addEventListener('click',(e)=>{e.stopPropagation();selectedActivitiesList=selectedActivitiesList.filter(x=>x!==btn.getAttribute('data-activity'));checkboxes.forEach(cb=>{if(cb.value===btn.getAttribute('data-activity'))cb.checked=false;});updateSelectedActivitiesDisplay();});});}}
-      activitiesContainer.addEventListener('click',function(e){if(e.target.closest('.remove-tag'))return;const isOpen=activitiesDropdown.style.display==='block';activitiesDropdown.style.display=isOpen?'none':'block';activitiesContainer.classList.toggle('open',!isOpen);});
-      document.addEventListener('click',function(e){if(!activitiesContainer.contains(e.target)){activitiesDropdown.style.display='none';activitiesContainer.classList.remove('open');}});
-      checkboxes.forEach(cb=>{cb.addEventListener('change',function(){if(this.checked){if(!selectedActivitiesList.includes(this.value))selectedActivitiesList.push(this.value);}else{selectedActivitiesList=selectedActivitiesList.filter(a=>a!==this.value);}updateSelectedActivitiesDisplay();});});
-
-      // Аналитика
-      async function loadAnalytics(){const entries=await getAllEntries();document.getElementById('statTotalEntries').textContent=entries.length;const uniqueDays=new Set(entries.map(e=>e.date));document.getElementById('statTotalDays').textContent=uniqueDays.size;let streak=0;const checkDate=new Date();const dateSet=new Set(entries.map(e=>e.date));while(dateSet.has(checkDate.toISOString().slice(0,10))){streak++;checkDate.setDate(checkDate.getDate()-1);}document.getElementById('statStreak').textContent=`${streak} 🔥`;const moodCounts={happy:0,good:0,normal:0,sad:0,bad:0};entries.forEach(e=>{if(moodCounts[e.mood]!==undefined)moodCounts[e.mood]++;});const maxCount=Math.max(...Object.values(moodCounts),1);document.getElementById('countHappy').textContent=moodCounts.happy;document.getElementById('countGood').textContent=moodCounts.good;document.getElementById('countNormal').textContent=moodCounts.normal;document.getElementById('countSad').textContent=moodCounts.sad;document.getElementById('countBad').textContent=moodCounts.bad;document.getElementById('barHappy').style.width=(moodCounts.happy/maxCount*100)+'%';document.getElementById('barGood').style.width=(moodCounts.good/maxCount*100)+'%';document.getElementById('barNormal').style.width=(moodCounts.normal/maxCount*100)+'%';document.getElementById('barSad').style.width=(moodCounts.sad/maxCount*100)+'%';document.getElementById('barBad').style.width=(moodCounts.bad/maxCount*100)+'%';let totalScore=0;let scoredEntries=0;entries.forEach(e=>{if(moodScores[e.mood]){totalScore+=moodScores[e.mood];scoredEntries++;}});const avgScore=scoredEntries>0?totalScore/scoredEntries:0;let topMood='normal';let topMoodName='Нейтральное';const maxMoodCount=Math.max(...Object.values(moodCounts));const topMoods=Object.entries(moodCounts).filter(([k,v])=>v===maxMoodCount);if(scoredEntries>0&&topMoods.length>1){topMood=Object.entries(moodScores).sort((a,b)=>Math.abs(a[1]-avgScore)-Math.abs(b[1]-avgScore))[0][0];topMoodName=moodNames[topMood];}else if(maxMoodCount>0){topMood=topMoods[0][0];topMoodName=moodNames[topMood];}document.getElementById('statTopMood').textContent=scoredEntries>0?topMoodName:'—';document.getElementById('popularMoodIcon').innerHTML=scoredEntries>0?moodMiniSVGs[topMood]:moodMiniSVGs['normal'];const actCounts={};entries.forEach(e=>{if(e.activities)e.activities.forEach(a=>{actCounts[a]=(actCounts[a]||0)+1;});});const topActs=Object.entries(actCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);document.getElementById('activitiesStats').innerHTML=topActs.length>0?topActs.map(([act,count])=>`<div class="act-stat-item"><span class="act-stat-count">${count}</span> ${act}</div>`).join(''):'<div class="act-empty">Нет данных</div>';const recent=entries.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,3);document.getElementById('recentList').innerHTML=recent.length>0?recent.map(e=>{const[y,m,d]=e.date.split('-');const months=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];const timeStr=e.createdAt?formatTime(e.createdAt):'';return`<div class="recent-item"><div class="recent-mood-svg">${e.mood?moodMiniSVGs[e.mood]:''}</div><span class="recent-date">${d} ${months[parseInt(m)-1]} ${y}${timeStr?` <span class="recent-time">${timeStr}</span>`:''}</span><span class="recent-text">${e.text||''}</span></div>`;}).join(''):'<div class="recent-empty">Нет записей</div>';renderDynamicChart(entries);}
-
-      function renderDynamicChart(entries){const container=document.getElementById('dynamicChart');const label=document.getElementById('chartPeriodLabel');const today=new Date();let allDays,periodLabel;if(chartPeriod==='week'){const currentMonday=new Date(today);currentMonday.setDate(today.getDate()-today.getDay()+(today.getDay()===0?-6:1));const baseMonday=new Date(currentMonday);baseMonday.setDate(baseMonday.getDate()+chartOffset*7);const baseSunday=new Date(baseMonday);baseSunday.setDate(baseMonday.getDate()+6);allDays=[];for(let d=new Date(baseMonday);d<=baseSunday;d.setDate(d.getDate()+1)){allDays.push(d.toISOString().slice(0,10));}const months=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];periodLabel=`${baseMonday.getDate()} ${months[baseMonday.getMonth()]} – ${baseSunday.getDate()} ${months[baseSunday.getMonth()]} ${baseSunday.getFullYear()}`;}else{const baseDate=new Date(today.getFullYear(),today.getMonth()+chartOffset,1);const lastDay=new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0);allDays=[];for(let d=new Date(baseDate);d<=lastDay;d.setDate(d.getDate()+1)){allDays.push(d.toISOString().slice(0,10));}const months=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];periodLabel=`${months[baseDate.getMonth()]} ${baseDate.getFullYear()}`;}label.textContent=periodLabel;if(allDays.length===0){container.innerHTML='<div class="act-empty">Нет данных</div>';return;}const dayData={};allDays.forEach(d=>{dayData[d]={scores:[],moods:[]};});entries.forEach(e=>{if(dayData[e.date]){if(moodScores[e.mood]){dayData[e.date].scores.push(moodScores[e.mood]);dayData[e.date].moods.push(e.mood);}}});const hasData=Object.values(dayData).some(d=>d.scores.length>0);if(!hasData){container.innerHTML='<div class="act-empty">Нет данных за этот период</div>';return;}const margin={top:30,right:15,bottom:45,left:42};const svgWidth=340;const svgHeight=180;const chartWidth=svgWidth-margin.left-margin.right;const chartHeight=svgHeight-margin.top-margin.bottom;const dayWidth=chartWidth/allDays.length;const getY=(score)=>margin.top+chartHeight-((score-1)/4)*chartHeight;const getX=(i)=>margin.left+i*dayWidth+dayWidth/2;let pathPoints=[];allDays.forEach((d,i)=>{const scores=dayData[d].scores;if(scores.length>0){pathPoints.push({x:getX(i),y:getY(scores.reduce((a,b)=>a+b,0)/scores.length),date:d});}});let pathD=pathPoints.map((p,i)=>(i===0?'M':'L')+p.x+','+p.y).join(' ');let circles=pathPoints.map(p=>{const dayEntries=entries.filter(e=>e.date===p.date).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));const lastMood=dayEntries.length>0?dayEntries[0].mood:'normal';const color={happy:'#67c79c',good:'#bdd36d',normal:'#f1cd5e',sad:'#f0a050',bad:'#f16f73'}[lastMood];return`<circle cx="${p.x}" cy="${p.y}" r="5" fill="${color}" stroke="white" stroke-width="2"/>`;}).join('');const yLabels=[5,4,3,2,1];const yMoods=['happy','good','normal','sad','bad'];const yAxisHTML=yLabels.map((v,i)=>{const y=getY(v);return`<g><line x1="${margin.left}" y1="${y}" x2="${svgWidth-margin.right}" y2="${y}" stroke="#f0f0f0" stroke-width="1" stroke-dasharray="4"/><g transform="translate(5,${y-9})">${moodMiniSVGs[yMoods[i]]}</g></g>`;}).join('');const xLabelsHTML=allDays.map((d,i)=>{if(allDays.length>14&&i%3!==0)return'';return`<text x="${getX(i)}" y="${svgHeight-10}" text-anchor="middle" font-size="10" fill="#8f8f8f">${parseInt(d.slice(8))}</text>`;}).join('');container.innerHTML=`<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">${yAxisHTML}<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${svgHeight-margin.bottom+5}" stroke="#d0d0d0" stroke-width="1"/><line x1="${margin.left}" y1="${svgHeight-margin.bottom+5}" x2="${svgWidth-margin.right}" y2="${svgHeight-margin.bottom+5}" stroke="#d0d0d0" stroke-width="1"/><path d="${pathD}" fill="none" stroke="#8f6bff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}${xLabelsHTML}</svg>`;}
-
-      async function init(){await getDB();loadUserName();populateYearSelect();updateDateSelectors();updateDayDisplay();await loadCalendarMoods();renderCalendar();}
-      init();
-    })();
-  </script>
-
-  <!-- PWA Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js?v=2').then(function(registration) {
+        navigator.serviceWorker.register('sw.js?v=2').then(function(reg) {
           console.log('SW зарегистрирован');
-        }).catch(function(error) {
-          console.log('SW ошибка:', error);
+        }).catch(function(err) {
+          console.log('SW ошибка:', err);
         });
       });
     }
